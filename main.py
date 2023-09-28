@@ -1,4 +1,3 @@
-# from __future__ import print_function
 import palm
 import calendar
 import requests
@@ -23,26 +22,28 @@ from google.oauth2 import service_account
 from google.protobuf import timestamp_pb2
 from dateutil import parser
 from datetime import timedelta
-
 import functions_framework
 
+# if 0 then function doesnt run
+ACTIVE_FLAG = 1
+# set scopes for gcal
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
-# SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
-# CLIENT_SECRET_FILE = "credentials.json"
 API_NAME = "calendar"
 API_VERSION = "v3"
-# CLIENT_ID = "376068948945-pr8ghf5fu7bgu4kvdmv00h72rvp0i7rl.apps.googleusercontent.com"
-# CALENDAR_ID = "d3b87f208a55822dca1833e047ad6cd84200beb4fda89b729325ebb3b011c546@group.calendar.google.com"
+# set flag for getting workouts from custom day, if 0 then use todays date
 CUSTOM_DATE_FLAG = 0
+CUSTOM_DATE = "20230923"
+# set flag setting todays workout only
 TODAY_ONLY_FLAG = 1
-CUSTOM_DATE = "20230819"
+# sets the time of the first workout of the day
 TRAINING_SESSION_START_TIME = "T07:00:00"
+# sets the time between workouts
 TIME_BETWEEN_WODS = "15"
 running_time = TRAINING_SESSION_START_TIME
-ACTIVE_FLAG = 1
 
 
 def get_secret(project_id, secret_name):
+    '''Access the secret value from Secret Manager'''
     # Initialize the Secret Manager client
     client = secretmanager.SecretManagerServiceClient()
     # Build the secret resource name
@@ -50,10 +51,24 @@ def get_secret(project_id, secret_name):
     # Access the secret
     response = client.access_secret_version(request={"name": secret_path})
     # Return the secret value
-    return response.payload.data.decode("UTF-8")
+    return response.payload.data.decode("UTF-8")\
+
+
+
+def get_bucket_data(bucket_name, blob_name):
+    '''Access the JSON object from Cloud Storage'''
+    storage_client = storage.Client()
+    # Get the bucket
+    bucket = storage_client.bucket(bucket_name)
+    # Get the blob (JSON object) from the bucket
+    blob = bucket.blob(blob_name)
+    # Download the JSON object as a string
+    json_string = blob.download_as_text()
+    return json_string
 
 
 def get_track_request(api_key):
+    '''Get ALL track data from SugarWOD'''
     url = f"https://api.sugarwod.com/v2/tracks?apiKey={api_key}"
     payload = {}
     headers = {}
@@ -61,15 +76,8 @@ def get_track_request(api_key):
     return response.json()
 
 
-def get_wod_request(date, track_id, api_key):
-    url = f"https://api.sugarwod.com/v2/workouts?dates={date}&track_id={track_id}&apiKey={api_key}"
-    payload = {}
-    headers = {}
-    response = requests.request("GET", url, headers=headers, data=payload)
-    return response.json()
-
-
 def extract_track_ids(data):
+    '''Extract the track name and id from the raw track data'''
     # Initialize an empty dictionary to store the name and id pairs
     name_id_dict = {}
     # Loop through each track object in the 'data' array
@@ -88,7 +96,17 @@ def extract_track_ids(data):
     return filtered_data
 
 
+def get_wod_request(date, track_id, api_key):
+    '''Get WOD data from SugarWOD for a given date and track'''
+    url = f"https://api.sugarwod.com/v2/workouts?dates={date}&track_id={track_id}&apiKey={api_key}"
+    payload = {}
+    headers = {}
+    response = requests.request("GET", url, headers=headers, data=payload)
+    return response.json()
+
+
 def get_track_id(track_name, track_data):
+    '''Get the track id for a given track name'''
     for name, track_id in track_data.items():
         if name == track_name:
             return track_id
@@ -96,6 +114,7 @@ def get_track_id(track_name, track_data):
 
 
 def get_wods_for_day(date, track_name, track_dict, api_key):
+    '''Get WOD data for a given day and track'''
     track_id = get_track_id(track_name, track_dict)
     # check if track exists in dict
     if track_id is None:
@@ -108,6 +127,7 @@ def get_wods_for_day(date, track_name, track_dict, api_key):
 
 
 def parse_wod_data(workouts):
+    '''Parse the raw workout data into a dictionary'''
     workout_dict = {}
     for workout in workouts["data"]:
         if workout is not None:
@@ -123,7 +143,8 @@ def parse_wod_data(workouts):
     return workout_dict
 
 
-def call_model(input):
+def make_time_prediction(input):
+    '''Call the model to generate the workout description'''
     vertexai.init(project="wodcal", location="us-central1")
     parameters = {
         "temperature": 0.2,
@@ -133,48 +154,24 @@ def call_model(input):
     }
     model = TextGenerationModel.from_pretrained("text-bison@001")
     response = model.predict(generate_prompt(input), **parameters)
-    # print(f"Response from Model: {response.text}")
     return response.text
 
 
 def generate_prompt(input):
-    training_data = get_wod_training_data()
+    '''Generate the prompt for the model, retreive few shot prompt data from bucket'''
+    training_data = get_bucket_data(
+        "wod_cal_training_data", "wod_training_data.txt")
     prompt = f"""{training_data} {input}
         output:
         """
     return prompt
 
 
-def make_time_prediction(wod_input):
-    # prediction
-    prediction = call_model(wod_input)
-    return prediction
-
-
-def get_cal_token():
-    bucket_name = "cal_token_bucket"
-    json_object_name = "token.json"
-    storage_client = storage.Client()
-    # Get the bucket
-    bucket = storage_client.bucket(bucket_name)
-    # Get the blob (JSON object) from the bucket
-    blob = bucket.blob(json_object_name)
-    # Download the JSON object as a string
-    json_string = blob.download_as_text()
-    return json_string
-
-
-def get_wod_training_data():
-    bucket_name = "wod_cal_training_data"
-    txt_object_name = "wod_training_data.txt"
-    storage_client = storage.Client()
-    # Get the bucket
-    bucket = storage_client.bucket(bucket_name)
-    # Get the blob (txt object) from the bucket
-    blob = bucket.blob(txt_object_name)
-    # Download the txt object as a string
-    txt_string = blob.download_as_text()
-    return txt_string
+# def make_time_prediction(wod_input):
+#     '''Make a prediction on the time of the workout'''
+#     # prediction
+#     prediction = call_model(wod_input)
+#     return prediction
 
 
 def create_cal_event(summary, description, wod_time):
@@ -182,11 +179,11 @@ def create_cal_event(summary, description, wod_time):
     Prints the start and name of the next 10 events on the user's calendar.
     """
     project_id = "wodcal"
-    # secret_name = "misha_k_calendar_id"
     secret_name = "wod_calendar_cal_id"
     # Retrieve the secret value
     calendar_secret_value = get_secret(project_id, secret_name)
     creds = None
+    # below if for initilizing the token.json file if it doesn't exist, otherwise retrieve the token from the bucket
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
@@ -202,8 +199,7 @@ def create_cal_event(summary, description, wod_time):
     #     # Save the credentials for the next run
     #     with open("token.json", "w") as token:
     #         token.write(creds.to_json())
-
-    token = get_cal_token()
+    token = get_bucket_data("cal_token_bucket", "token.json")
     creds = Credentials.from_authorized_user_info(json.loads(token), SCOPES)
 
     try:
@@ -212,12 +208,6 @@ def create_cal_event(summary, description, wod_time):
         start_time = create_gcal_date_string() + running_time
         end_time = create_gcal_date_string() + add_minutes_to_time(start_time, wod_time)
         running_time = add_minutes_to_time(end_time, TIME_BETWEEN_WODS)
-        # print(start_time)
-        # print(end_time)
-        # start_time = "2021-08-16T09:00:00-07:00"
-        # end_time = "2021-08-16T10:00:00-07:00"
-        # print(start_time)
-        # print(end_time)
         # Call the Calendar API
         event = {
             "summary": summary + " - " + str(wod_time) + " minutes",
@@ -232,7 +222,6 @@ def create_cal_event(summary, description, wod_time):
                 "timeZone": "America/New_York",
             },
         }
-
         event = (
             service.events()
             .insert(
@@ -248,6 +237,7 @@ def create_cal_event(summary, description, wod_time):
 
 
 def sugarwodInit():
+    '''Main function to run the script'''
     project_id = "wodcal"
     secret_name = "sugarwod-api-key"
     # Retrieve the secret value
@@ -258,7 +248,7 @@ def sugarwodInit():
     track_dict = extract_track_ids(raw_track_data)
     # get raw wod data for a given day
     raw_wod_data = get_wods_for_day(
-        create_sugarwod_date_string(), "Compete", track_dict, secret_value
+        create_sugarwod_date_string(), "WODCal", track_dict, secret_value
     )
     # create wod_name:wod_description dict
     parsed_wod_data = parse_wod_data(raw_wod_data)
@@ -270,13 +260,11 @@ def sugarwodInit():
         inner_dict = {each[0]: each[1]}
         key_tuple = tuple(inner_dict.items())
         outer_dict[key_tuple] = make_time_prediction(each[1])
-
-    # print(type(parsed_wod_data))
-    # print_predicted_wods(parsed_wod_data)
     return outer_dict
 
 
 def create_sugarwod_date_string():
+    '''take todays date and make it a string in format YYYYMMDD'''
     if CUSTOM_DATE_FLAG == 1:
         return CUSTOM_DATE
     else:
@@ -293,7 +281,7 @@ def create_sugarwod_date_string():
 
 
 def create_gcal_date_string():
-    # take todays date and make it a string in format time in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)
+    '''take todays date and make it a string in format time in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)'''
     dateStr = ""
     today = datetime.date.today()
     dateStr += str(today.year)
@@ -305,11 +293,11 @@ def create_gcal_date_string():
     if today.day < 10:
         dateStr += "0"
     dateStr += str(today.day)
-    # dateStr += "T09:00:00-07:00"
     return dateStr
 
 
 def add_minutes_to_time(time_string, minutes_to_add):
+    '''Add minutes to a time string in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)'''
     # Parse the original time string using dateutil.parser
     original_time = parser.parse(time_string)
     # Convert minutes to timedelta
@@ -322,25 +310,19 @@ def add_minutes_to_time(time_string, minutes_to_add):
     return new_time_string
 
 
-# Triggered from a message on a Cloud Pub/Sub topic.
 @functions_framework.cloud_event
 def wodcal_pubsub(cloud_event):
+    '''Triggered from a message on a Cloud Pub/Sub topic.'''
     # if whole week flag is set, loop through each day of the week and create a dict of wods
     # if whole week flag is not set, create a dict of wods for a single day
     if ACTIVE_FLAG == 1:
         if TODAY_ONLY_FLAG == 1:
             wod_predictions = sugarwodInit()
-            # print(wod_predictions)
             # loop through each entry in the dict, create a calendar event
             for key, value in wod_predictions.items():
-                # print(key[0][0])
-                # print(key[0][1])
-                # print(value)
                 create_cal_event(key[0][0], key[0][1], value)
         else:
+            # future functionality to create a whole week of events
             pass
 
-    # time in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)
-    # start_time = "2021-08-16T09:00:00-07:00"
-    # end_time = "2021-08-16T10:00:00-07:00"
-    return ('ok',200)
+    return ('ok', 200)
