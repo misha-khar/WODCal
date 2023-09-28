@@ -167,13 +167,6 @@ def generate_prompt(input):
     return prompt
 
 
-# def make_time_prediction(wod_input):
-#     '''Make a prediction on the time of the workout'''
-#     # prediction
-#     prediction = call_model(wod_input)
-#     return prediction
-
-
 def create_cal_event(summary, description, wod_time):
     """Shows basic usage of the Google Calendar API.
     Prints the start and name of the next 10 events on the user's calendar.
