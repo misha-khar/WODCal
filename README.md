@@ -24,6 +24,7 @@ WODCal is an automated workout scheduling tool that simplifies the process of cr
 4. [Usage](#usage)
 5. [Contributing](#contributing)
 6. [License](#license)
+7. [Footnotes](#footnotes)
 
 ## Getting Started
 
