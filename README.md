@@ -60,13 +60,19 @@ Before using WODCal, you need to configure it with your API keys and settings. H
    - Set up Google Secret Manager and create secrets for your project.
    - Configure the `get_secret` function in the code to retrieve secrets from Secret Manager.
 
-3. **Cloud Storage (Optional):**
+3. **SugarWOD API Key**
+    - Go to the SugarWOD developer portal.
+    - Click the Create API Key button.
+    - Enter a name for your API key and click the Create button.
+    - Your API key will be displayed on the screen. Copy and save it in Secrets Manager
+
+4. **Cloud Storage (Optional):**
    - If you want to store token data in Cloud Storage, set up a bucket and configure the `get_bucket_data` function.
 
-4. **Machine Learning Model:**
+5. **Machine Learning Model:**
    - Configure the machine learning model you want to use for workout duration prediction in the `make_time_prediction` function.
 
-5. **Customize Settings:**
+6. **Customize Settings:**
    - Adjust the settings in the code, such as `ACTIVE_FLAG`, `CUSTOM_DATE_FLAG`, `TODAY_ONLY_FLAG`, `TRAINING_SESSION_START_TIME`, and `TIME_BETWEEN_WODS`, to match your requirements.
 
 ## Usage
