@@ -95,3 +95,8 @@ Contributions to WODCal are welcome! If you'd like to contribute to the project,
 This project is licensed under the [Apache License 2.0](LICENSE). Feel free to use, modify, and distribute it according to the terms of the license.
 
 Enjoy using WODCal to simplify your workout scheduling and stay motivated on your fitness journey!
+
+### Footnotes
+
+This project was part of a Google Developer Group event: *Building and hosting LLM based applications using GCP serverless stack* hosted at Google Pittsburgh on Thursday, September 23, 2023 [Event Page](https://gdg.community.dev/events/details/google-gdg-cloud-pittsburgh-presents-building-and-hosting-llm-based-applications-using-gcp-serverless-stack/cohost-gdg-cloud-pittsburgh) [Project Slides](https://docs.google.com/presentation/d/1DRT-b3oAxjy-B19_QA7x0egeeTfHMvVqPZIwiymqWlY/edit?usp=sharing)
+
