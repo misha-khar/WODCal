@@ -12,7 +12,7 @@ WODCal is an automated workout scheduling tool that simplifies the process of cr
 
 2. **Workout Duration Prediction:** It utilizes the PaLM LLM (Language Model) to determine the duration of each workout based on the workout description.
 
-3. **Flexible Scheduling:** You can schedule workouts for a single day or an entire week, depending on your needs.
+3. **Flexible Scheduling:** You can schedule workouts for a single day or an entire week (to be implemented), depending on your needs.
 
 4. **Easy Configuration:** The project is designed to be easily configured with your own settings and API keys.
 
