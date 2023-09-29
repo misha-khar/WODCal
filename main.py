@@ -40,6 +40,8 @@ TRAINING_SESSION_START_TIME = "T07:00:00"
 # sets the time between workouts
 TIME_BETWEEN_WODS = "15"
 running_time = TRAINING_SESSION_START_TIME
+# name of track to receive workouts from
+TRACK_NAME = "WODCal"
 
 
 def get_secret(project_id, secret_name):
@@ -241,7 +243,7 @@ def sugarwodInit():
     track_dict = extract_track_ids(raw_track_data)
     # get raw wod data for a given day
     raw_wod_data = get_wods_for_day(
-        create_sugarwod_date_string(), "WODCal", track_dict, secret_value
+        create_sugarwod_date_string(), TRACK_NAME, track_dict, secret_value
     )
     # create wod_name:wod_description dict
     parsed_wod_data = parse_wod_data(raw_wod_data)
