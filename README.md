@@ -99,5 +99,5 @@ Enjoy using WODCal to simplify your workout scheduling and stay motivated on you
 
 ### Footnotes
 
-This project was part of a Google Developer Group event: *Building and hosting LLM based applications using GCP serverless stack* hosted at Google Pittsburgh on Thursday, September 23, 2023 [Event Page](https://gdg.community.dev/events/details/google-gdg-cloud-pittsburgh-presents-building-and-hosting-llm-based-applications-using-gcp-serverless-stack/cohost-gdg-cloud-pittsburgh) [Project Slides](https://docs.google.com/presentation/d/1DRT-b3oAxjy-B19_QA7x0egeeTfHMvVqPZIwiymqWlY/edit?usp=sharing)
+This project was part of a Google Developer Group event: *Building and hosting LLM based applications using GCP serverless stack* hosted at Google Pittsburgh on Thursday, September 28, 2023 [Event Page](https://gdg.community.dev/events/details/google-gdg-cloud-pittsburgh-presents-building-and-hosting-llm-based-applications-using-gcp-serverless-stack/cohost-gdg-cloud-pittsburgh) [Project Slides](https://docs.google.com/presentation/d/1DRT-b3oAxjy-B19_QA7x0egeeTfHMvVqPZIwiymqWlY/edit?usp=sharing)
 
